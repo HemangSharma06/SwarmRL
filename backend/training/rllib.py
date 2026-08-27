@@ -18,6 +18,5 @@ def env_creator(env_config):
 
     return ParallelPettingZooEnv(env)
 
-
 def register_swarm_env():
     register_env(ENV_NAME, env_creator)
