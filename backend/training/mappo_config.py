@@ -1,10 +1,21 @@
 from ray.rllib.algorithms.ppo import PPOConfig
+from ray.rllib.core.rl_module.rl_module import RLModuleSpec
 
-from backend.training.rllib import ENV_NAME
-from backend.training.rllib import register_swarm_env
+from backend.training.rllib import (
+    ENV_NAME,
+    register_swarm_env
+)
+from backend.training.mappo import MAPPO_RLModule
 
-def policy_mapping_fn(agent_id, episode=None, worker=None, **kwargs):
+
+def policy_mapping_fn(
+    agent_id,
+    episode=None,
+    worker=None,
+    **kwargs
+):
     return "shared_policy"
+
 
 def get_mappo_config(
     num_agents=2,
@@ -27,6 +38,11 @@ def get_mappo_config(
         .multi_agent(
             policies={"shared_policy"},
             policy_mapping_fn=policy_mapping_fn
+        )
+        .rl_module(
+            rl_module_spec=RLModuleSpec(
+                module_class=MAPPO_RLModule
+            )
         )
         .training(
             gamma=0.99,
