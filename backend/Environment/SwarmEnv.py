@@ -4,6 +4,7 @@ from pettingzoo import ParallelEnv
 
 from backend.Environment.drone import Drone
 from backend.Environment.reward import SwarmReward
+from backend.Environment.Global import GlobalState
 
 
 class SwarmEnv(ParallelEnv):
@@ -46,12 +47,10 @@ class SwarmEnv(ParallelEnv):
             for agent in self.possible_agents
         }
 
-        # Observation:
-        #
+        # Local observation:
         # [x, y, z,
         #  nearest_dx, nearest_dy, nearest_dz,
         #  nearest_distance]
-        #
         self.observation_spaces = {
             agent: spaces.Box(
                 low=np.array(
@@ -74,7 +73,9 @@ class SwarmEnv(ParallelEnv):
                         space_size,
                         space_size,
                         space_size,
-                        np.sqrt(3 * space_size ** 2)
+                        np.sqrt(
+                            3 * space_size ** 2
+                        )
                     ],
                     dtype=np.float32
                 ),
@@ -85,6 +86,9 @@ class SwarmEnv(ParallelEnv):
 
         # Drone objects
         self.drones = {}
+
+        # Global state handler
+        self.global_state = GlobalState(self)
 
     def observation_space(self, agent):
         return self.observation_spaces[agent]
@@ -97,7 +101,6 @@ class SwarmEnv(ParallelEnv):
         if seed is not None:
             np.random.seed(seed)
 
-        # Reset active agents
         self.agents = self.possible_agents.copy()
 
         # Create drones
@@ -109,14 +112,17 @@ class SwarmEnv(ParallelEnv):
             for agent in self.agents
         }
 
-        # Initial observations
         observations = {
             agent: self.get_observation(agent)
             for agent in self.agents
         }
 
+        global_state = self.get_global_state()
+
         infos = {
-            agent: {}
+            agent: {
+                "global_state": global_state.copy()
+            }
             for agent in self.agents
         }
 
@@ -124,8 +130,13 @@ class SwarmEnv(ParallelEnv):
 
     def calculate_distance(self, agent_a, agent_b):
 
-        position_a = self.drones[agent_a].get_position()
-        position_b = self.drones[agent_b].get_position()
+        position_a = self.drones[
+            agent_a
+        ].get_position()
+
+        position_b = self.drones[
+            agent_b
+        ].get_position()
 
         distance = np.linalg.norm(
             position_a - position_b
@@ -156,13 +167,14 @@ class SwarmEnv(ParallelEnv):
 
     def get_observation(self, agent):
 
-        position = self.drones[agent].get_position()
+        position = self.drones[
+            agent
+        ].get_position()
 
         nearest_drone, nearest_distance = (
             self.get_nearest_drone(agent)
         )
 
-        # If there are no other drones
         if nearest_drone is None:
 
             relative_position = np.zeros(
@@ -175,7 +187,9 @@ class SwarmEnv(ParallelEnv):
         else:
 
             nearest_position = (
-                self.drones[nearest_drone].get_position()
+                self.drones[
+                    nearest_drone
+                ].get_position()
             )
 
             relative_position = (
@@ -194,6 +208,14 @@ class SwarmEnv(ParallelEnv):
         )
 
         return observation.astype(np.float32)
+
+    def get_global_state(self):
+
+        return self.global_state.get_state()
+
+    def get_global_state_dim(self):
+
+        return self.global_state.get_state_dim()
 
     def check_collision(self, agent_a, agent_b):
 
@@ -235,6 +257,9 @@ class SwarmEnv(ParallelEnv):
                     collisions.add(agent_a)
                     collisions.add(agent_b)
 
+        # Global state after movement
+        global_state = self.get_global_state()
+
         # Calculate rewards
         for agent in self.agents:
 
@@ -257,10 +282,9 @@ class SwarmEnv(ParallelEnv):
             infos[agent] = {
                 "nearest_drone": nearest_drone,
                 "nearest_distance": nearest_distance,
-                "collision": collision
+                "collision": collision,
+                "global_state": global_state.copy()
             }
-
-        # New observations
         observations = {
             agent: self.get_observation(agent)
             for agent in self.agents
