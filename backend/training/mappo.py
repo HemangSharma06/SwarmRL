@@ -26,7 +26,8 @@ class MAPPO_RLModule(TorchRLModule):
         )
 
         self.critic = CentralizedCritic(
-            global_observation_dim=self.observation_dim
+            global_observation_dim=self.observation_dim,
+            action_dim=self.action_dim
         )
 
     def _forward_inference(self, batch):
@@ -54,7 +55,11 @@ class MAPPO_RLModule(TorchRLModule):
         observations = batch["obs"].float()
 
         actions = self.actor(observations)
-        values = self.critic(observations)
+
+        values = self.critic(
+            observations,
+            actions
+        )
 
         return {
             "actions": actions,
