@@ -17,12 +17,15 @@ class SwarmEnv(ParallelEnv):
         self,
         num_agents=2,
         space_size=100,
-        collision_threshold=2.0
+        collision_threshold=2.0,
+        max_episode_steps=500
     ):
         super().__init__()
 
         self.space_size = space_size
         self.collision_threshold = collision_threshold
+        self.max_episode_steps = max_episode_steps
+        self.episode_step = 0
 
         # Reward system
         self.reward_system = SwarmReward()
@@ -102,6 +105,7 @@ class SwarmEnv(ParallelEnv):
             np.random.seed(seed)
 
         self.agents = self.possible_agents.copy()
+        self.episode_step = 0
 
         # Create drones
         self.drones = {
@@ -228,6 +232,8 @@ class SwarmEnv(ParallelEnv):
 
     def step(self, actions):
 
+        self.episode_step += 1
+
         rewards = {}
         terminations = {}
         truncations = {}
@@ -260,6 +266,11 @@ class SwarmEnv(ParallelEnv):
         # Global state after movement
         global_state = self.get_global_state()
 
+        # Check if episode is truncated (max steps reached)
+        episode_truncated = (
+            self.episode_step >= self.max_episode_steps
+        )
+
         # Calculate rewards
         for agent in self.agents:
 
@@ -276,8 +287,11 @@ class SwarmEnv(ParallelEnv):
                 )
             )
 
-            terminations[agent] = False
-            truncations[agent] = False
+            # Termination if collision occurs (permanent)
+            terminations[agent] = collision
+
+            # Truncation if episode max steps reached
+            truncations[agent] = episode_truncated
 
             infos[agent] = {
                 "nearest_drone": nearest_drone,
