@@ -13,6 +13,9 @@ def env_creator(env_config):
         space_size=env_config.get("space_size", 100),
         collision_threshold=env_config.get(
             "collision_threshold", 2.0
+        ),
+        max_episode_steps=env_config.get(
+            "max_episode_steps", 500
         )
     )
 
