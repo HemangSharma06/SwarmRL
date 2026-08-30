@@ -20,7 +20,8 @@ def policy_mapping_fn(
 def get_mappo_config(
     num_agents=2,
     space_size=100,
-    collision_threshold=2.0
+    collision_threshold=2.0,
+    max_episode_steps=500
 ):
     register_swarm_env()
 
@@ -31,7 +32,8 @@ def get_mappo_config(
             env_config={
                 "num_agents": num_agents,
                 "space_size": space_size,
-                "collision_threshold": collision_threshold
+                "collision_threshold": collision_threshold,
+                "max_episode_steps": max_episode_steps
             }
         )
         .framework("torch")
