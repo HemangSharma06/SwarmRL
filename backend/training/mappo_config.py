@@ -56,7 +56,7 @@ def get_mappo_config(
             clip_param=0.2
         )
         .env_runners(
-            num_env_runners=0
+            num_env_runners=1
         )
     )
 
