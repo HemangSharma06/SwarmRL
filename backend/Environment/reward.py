@@ -15,7 +15,8 @@ class SwarmReward:
     def calculate_reward(
         self,
         collision,
-        distance_to_nearest
+        distance_to_nearest,
+        newly_explored=True
     ):
 
         # Collision
@@ -26,5 +27,5 @@ class SwarmReward:
         if distance_to_nearest < self.proximity_threshold:
             return self.proximity_penalty
 
-        # Normal safe movement
-        return self.safe_reward
+        # Reward safe movement only when it discovers a new region.
+        return self.safe_reward if newly_explored else 0.0

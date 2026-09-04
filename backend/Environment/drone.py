@@ -26,13 +26,15 @@ class Drone:
             dtype=np.float32
         )
 
-    def move(self, action):
+    def move(self, action, wind=None):
 
         # Store velocity
-        self.velocity = np.asarray(
+        control_velocity = np.asarray(
             action,
             dtype=np.float32
         )
+        wind_vector = np.zeros(3, dtype=np.float32) if wind is None else np.asarray(wind, dtype=np.float32)
+        self.velocity = control_velocity + wind_vector
 
         # Update position
         self.position += self.velocity
