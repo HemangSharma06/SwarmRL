@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import torch
 import ray
 from backend.Environment.SwarmEnv import SwarmEnv
 from backend.training.rllib import register_swarm_env, env_creator
@@ -31,6 +32,8 @@ def evaluate(
             else:
                 print("No checkpoints found!")
                 return None
+
+    checkpoint_path = os.path.abspath(checkpoint_path)
     
     print(f"\nEvaluating checkpoint: {checkpoint_path}")
     print(f"  Agents: {num_agents}")
@@ -47,6 +50,7 @@ def evaluate(
     
     algorithm = config.build_algo()
     algorithm.restore(checkpoint_path)
+    policy_module = algorithm.get_module("shared_policy")
     
     # Create environment
     env = SwarmEnv(
@@ -77,19 +81,13 @@ def evaluate(
             actions = {}
             
             for agent in env.agents:
-                # Use policy to get action
-                action_dict = algorithm.compute_single_action(
-                    observation=observations[agent],
-                    policy_id="shared_policy",
-                    explore=False
+                observation = torch.as_tensor(
+                    observations[agent], dtype=torch.float32
+                ).unsqueeze(0)
+                output = policy_module.forward_inference({"obs": observation})
+                actions[agent] = (
+                    output["actions"][0].detach().cpu().numpy()
                 )
-                
-                action = (
-                    action_dict
-                    if isinstance(action_dict, np.ndarray)
-                    else action_dict[0]
-                )
-                actions[agent] = action
             
             # Step environment
             observations, rewards, terminations, truncations, infos = env.step(

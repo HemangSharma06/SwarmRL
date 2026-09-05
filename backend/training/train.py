@@ -9,7 +9,8 @@ def train(
     max_episode_steps=500,
     iterations=10,
     checkpoint_freq=5,
-    checkpoint_dir="./checkpoints"
+    checkpoint_dir="./checkpoints",
+    train_batch_size=4000
 ):
     """
     Train MAPPO algorithm on SwarmEnv.
@@ -27,13 +28,15 @@ def train(
     ray.init(ignore_reinit_error=True)
     
     # Create checkpoint directory
+    checkpoint_dir = os.path.abspath(checkpoint_dir)
     os.makedirs(checkpoint_dir, exist_ok=True)
     
     config = get_mappo_config(
         num_agents=num_agents,
         space_size=space_size,
         collision_threshold=collision_threshold,
-        max_episode_steps=max_episode_steps
+        max_episode_steps=max_episode_steps,
+        train_batch_size=train_batch_size
     )
     
     algorithm = config.build_algo()
