@@ -277,7 +277,7 @@ class SwarmEnv(ParallelEnv):
 
         return self.global_state.get_state_dim()
 
-    def get_simulation_state(self):
+    def get_simulation_state(self, policy_mode: str = "emergent"):
         drones = []
         for agent, drone in self.drones.items():
             _, nearest_distance = self.get_nearest_drone(agent)
@@ -305,8 +305,12 @@ class SwarmEnv(ParallelEnv):
             drones=drones,
             obstacles=[obstacle.to_dict() for obstacle in self.obstacles.values()],
             curriculum_level=self.curriculum.current_level.level,
+            visited_cells=[list(cell) for cell in self.coverage_tracker.visited_cells],
+            policy_mode=policy_mode,
+            grid_size=self.grid_size,
         )
         return self.simulation_state.to_dict()
+
 
     def check_collision(self, agent_a, agent_b):
 
